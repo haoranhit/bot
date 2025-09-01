@@ -23,7 +23,7 @@ cfg = {
 
 # ================= Error Detection and Exit Function =================
 async def check_for_server_error_and_exit(page, browser, context="general"):
-    """
+    """∏∏
     Check for server error and exit if found
     """
     try:
@@ -305,7 +305,7 @@ async def main():
 
         # Debug: Check if EN button exists
         try:
-            en_button = page.locator("text=/EN/i")
+            en_button = page.locator("a[href*='/Language/']:has-text('En')")
             if await en_button.count() > 0:
                 print("Found EN button, clicking...")
                 await en_button.hover()
@@ -457,7 +457,7 @@ async def main():
         print("Clicked ENG button")
         
         # Wait for navigation and check current URL
-        await asyncio.sleep(random.uniform(2, 4))
+        await asyncio.sleep(random.uniform(1, 4))
         print(f"Current URL after ENG click: {page.url}")
         
         # Navigate to Services page if not already there
