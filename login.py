@@ -1,6 +1,8 @@
 import asyncio
 import random
 import requests
+import time
+import datetime
 from playwright.async_api import async_playwright
 
 cfg = {
@@ -21,9 +23,26 @@ cfg = {
 "refresh_interval": 60  # 每60秒检查一次
 }
 
+cfg = {
+    "bls": {
+    "username": "你的BLS账号",
+    "password": "你的BLS密码",
+    "url": "https://usa.blsspainglobal.com/Global/account/login"
+  },
+  "prenotami": {
+    "username": "yueqian.li@gmail.com",
+    "password": "Hit19811119",
+    "url": "https://prenotami.esteri.it/"
+  },
+  "telegram": {
+    "token": "8154497875:AAEj0pO8thIwDQK20jHwzH2Fa2FrIEtFZFQ",
+    "chat_id": "8298478116"
+  },
+"refresh_interval": 60  # 每60秒检查一次
+}
 # ================= Error Detection and Exit Function =================
 async def check_for_server_error_and_exit(page, browser, context="general"):
-    """∏∏
+    """
     Check for server error and exit if found
     """
     try:
@@ -207,12 +226,12 @@ async def click_schengen_book_button(page):
                     # Extra human-like behavior to avoid detection
                     # Random mouse movements before clicking
                     await page.mouse.move(random.randint(100, 300), random.randint(100, 300))
-                    await asyncio.sleep(random.uniform(0.5, 1.0))
+                    #await asyncio.sleep(random.uniform(0.5, 1.0))
                     
                     # Human-like interaction with random delay
-                    await asyncio.sleep(random.uniform(3, 7))  # Longer delay before clicking
+                    #await asyncio.sleep(random.uniform(3, 7))  # Longer delay before clicking
                     await book_button.hover()
-                    await asyncio.sleep(random.uniform(1.0, 2.5))  # Longer hover time
+                    #await asyncio.sleep(random.uniform(1.0, 2.5))  # Longer hover time
                     await book_button.click()
                     
                     print("Successfully clicked VISAS/Schengen Book button!")
@@ -507,6 +526,20 @@ async def main():
         
         # ================= 尝试预约循环 =================
         # Try to book VISAS/Schengen appointments with retry logic
+        wait_time_flag = True
+        target_hour, target_minute, target_sec = 14, 59, 59
+        #target_hour, target_minute, target_sec = 23, 29, 30
+        now = datetime.datetime.now()
+        target_time = datetime.datetime(now.year, now.month, now.day, target_hour, target_minute, target_sec)
+        # If target time for today has passed, set it for tomorrow (to run every day)
+        if now > target_time:
+            target_time += datetime.timedelta(days=1)
+        sleep_seconds = (target_time - now).total_seconds()
+        print(f"Waiting for {sleep_seconds:.2f} seconds until {target_time.strftime('%H:%M:%S')}...")
+        time.sleep(sleep_seconds)
+        print(f"It's {target_time.strftime('%H:%M:%S')}! Clicking the VISA appointment ...")
+        time.sleep(0.99)
+
         max_attempts = 2
         for attempt in range(max_attempts):
             print(f"\n=== Booking Attempt {attempt + 1}/{max_attempts} ===")

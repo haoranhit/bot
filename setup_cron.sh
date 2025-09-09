@@ -7,7 +7,7 @@ echo "Setting up cron job to run Python script daily at 2:59 PM..."
 
 # Get the current directory (where this script is located)
 # SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="/Users/ran/work/playground/bot"
+SCRIPT_DIR="/Users/yueqian/Downloads/code/bot"
 
 # Define the Python script to run (change this if your main script has a different name)
 PYTHON_SCRIPT="login.py"
@@ -21,7 +21,7 @@ fi
 
 # Create the cron job entry
 # Format: 59 14 * * * (daily at 2:59 PM - 14:59 in 24-hour format)
-CRON_JOB="30 22 * * * cd $SCRIPT_DIR && source venv/bin/activate && python $PYTHON_SCRIPT >> $SCRIPT_DIR/cron.log 2>&1"
+CRON_JOB="03 23 * * * cd $SCRIPT_DIR && source venv/bin/activate && python $PYTHON_SCRIPT >> $SCRIPT_DIR/cron.log 2>&1"
 
 # Check if this cron job already exists
 if crontab -l 2>/dev/null | grep -q "$SCRIPT_DIR/$PYTHON_SCRIPT"; then
@@ -36,7 +36,7 @@ fi
 (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
 
 # Verify the cron job was added
-if crontab -l 2>/dev/null | grep -q "$SCRIPT_DIR/$PYTHON_SCRIPT"; then
+if crontab -l 2>/dev/null | grep "$SCRIPT_DIR/$PYTHON_SCRIPT"; then
     echo "✓ Cron job added successfully!"
     echo ""
     echo "Your Python script will now run daily at 2:59 PM"
