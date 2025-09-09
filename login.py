@@ -611,13 +611,13 @@ async def check_appointments(page):
 
 async def main():
     async with async_playwright() as p:
-        # Launch WebKit (Safari-based) browser - force Safari only
-        print("Launching WebKit (Safari-based) browser...")
-        browser = await p.webkit.launch(
+        # Launch Firefox browser
+        print("Launching Firefox browser...")
+        browser = await p.firefox.launch(
             headless=False,
             slow_mo=1000  # Add 1 second delay between actions for more human-like behavior
         )
-        print("Successfully launched WebKit browser")
+        print("Successfully launched Firefox browser")
         
         # Create new page with additional stealth settings
         page = await browser.new_page()
@@ -625,14 +625,14 @@ async def main():
         # Set viewport to common resolution
         await page.set_viewport_size({"width": 1366, "height": 768})
         
-        # Add extra headers to look more human (Safari-specific)
+        # Add extra headers to look more human (Firefox-specific)
         await page.set_extra_http_headers({
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/118.0'
         })
         
         # Override navigator properties (works for all browsers)
