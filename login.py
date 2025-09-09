@@ -610,20 +610,13 @@ async def check_appointments(page):
 
 async def main():
     async with async_playwright() as p:
-        # Launch browser with human-like settings
-        browser = await p.chromium.launch(
+        # Launch WebKit (Safari-based) browser - force Safari only
+        print("Launching WebKit (Safari-based) browser...")
+        browser = await p.webkit.launch(
             headless=False,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-web-security',
-                '--disable-features=VizDisplayCompositor',
-                '--no-first-run',
-                '--no-default-browser-check',
-                '--disable-dev-shm-usage',
-                '--disable-extensions',
-                '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            ]
+            slow_mo=1000  # Add 1 second delay between actions for more human-like behavior
         )
+        print("Successfully launched WebKit browser")
         
         # Create new page with additional stealth settings
         page = await browser.new_page()
@@ -631,20 +624,39 @@ async def main():
         # Set viewport to common resolution
         await page.set_viewport_size({"width": 1366, "height": 768})
         
-        # Add extra headers to look more human
+        # Add extra headers to look more human (Safari-specific)
         await page.set_extra_http_headers({
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15'
         })
         
-        # Override navigator.webdriver property
+        # Override navigator properties (works for all browsers)
         await page.add_init_script("""
+            // Override webdriver detection
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => undefined,
             });
+            
+            // Override automation flags
+            window.chrome = window.chrome || {};
+            window.chrome.runtime = window.chrome.runtime || {};
+            
+            // Remove Playwright signatures
+            delete window.__playwright;
+            delete window.__pw_manual;
+            delete window.__PW_inspect;
+            
+            // Override permissions
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications' ?
+                    Promise.resolve({ state: Notification.permission }) :
+                    originalQuery(parameters)
+            );
         """)
         await page.goto("https://prenotami.esteri.it")
         print(f"Navigated to: {page.url}")
