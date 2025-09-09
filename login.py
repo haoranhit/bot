@@ -23,7 +23,7 @@ import json
 # "refresh_interval": 60  # 每60秒检查一次
 # }
 with open("config.json" , "r") as f:
-    cfg = json.load(f)["user1"]
+    cfg = json.load(f)["user2"]
 # ================= Error Detection and Exit Function =================
 async def check_for_server_error_and_exit(page, browser, context="general"):
     """
