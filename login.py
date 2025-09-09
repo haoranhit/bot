@@ -469,8 +469,8 @@ async def get_otp_code():
         
         print(f"Connecting to Gmail account: {email_address}")
         
-        # Connect to Gmail IMAP server
-        mail = imaplib.IMAP4_SSL("imap.gmail.com")
+        # Connect to QQ Mail IMAP server
+        mail = imaplib.IMAP4_SSL("imap.qq.com", 993)
         mail.login(email_address, email_password)
         
         # Select inbox
@@ -857,8 +857,7 @@ async def main():
             print("DataTable not found, taking screenshot...")
             await page.screenshot(path="datatable_missing.png")
         
-
-        await click_passport_book_button(page)
+        # get_otp_code()
         # ================= 尝试预约循环 =================
         # Try to book VISAS/Schengen appointments with retry logic
         wait_time_flag = True

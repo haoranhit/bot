@@ -1,0 +1,35 @@
+{
+"user1" : {
+  "prenotami": {
+    "username": "haoranhit@gmail.com",
+    "password": "Hhit1981*",
+    "url": "https://prenotami.esteri.it/"
+  },
+  "telegram": {
+    "token": "8024666853:AAG6QwcWOD0IIt6LZ9qoRVzT0Hj58lZaPkY",
+    "chat_id": "8335011829"
+  }
+},
+"user2" : {
+  "prenotami": {
+    "username": "meilimajia@gmail.com",
+    "password": "Hhit1981*",
+    "url": "https://prenotami.esteri.it/"
+  },
+  "telegram": {
+    "token": "8024666853:AAG6QwcWOD0IIt6LZ9qoRVzT0Hj58lZaPkY",
+    "chat_id": "8335011829"
+  }
+}, 
+"user3" :{
+  "prenotami": {
+    "username": "2115357227@qq.com",
+    "password": "Hhit1981*",
+    "url": "https://prenotami.esteri.it/"
+  },
+  "telegram": {
+    "token": "8024666853:AAG6QwcWOD0IIt6LZ9qoRVzT0Hj58lZaPkY",
+    "chat_id": "8335011829"
+  }
+}
+}
