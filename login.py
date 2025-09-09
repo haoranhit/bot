@@ -250,14 +250,14 @@ async def click_schengen_book_button(page):
         print(f"Error clicking VISAS/Schengen Book button: {e}")
         return False
 
-# ================= 点击IDENTITY/TRAVEL DOCUMENTS/Id card按钮函数 =================
+# ================= 点击IDENTITY/TRAVEL DOCUMENTS/Passport按钮函数 =================
 async def click_passport_book_button(page):
     """
-    Click the IDENTITY/TRAVEL DOCUMENTS/Id card Book button and then click Send new code
+    Click the IDENTITY/TRAVEL DOCUMENTS/Passport Book button and then click Send new code
     Returns True if successful, False otherwise
     """
     try:
-        print("Looking for IDENTITY/TRAVEL DOCUMENTS/Id card Book button...")
+        print("Looking for IDENTITY/TRAVEL DOCUMENTS/Passport Book button...")
         
         # Check for server errors first
         page_content = await page.content()
@@ -276,16 +276,16 @@ async def click_passport_book_button(page):
         
         # Target the specific IDENTITY/TRAVEL DOCUMENTS/Id card Book button in the DataTable
         passport_book_selectors = [
-            # Most specific: target the exact row with IDENTITY/TRAVEL DOCUMENTS and Id card, then find the Book button
-            '//tr[td[text()="IDENTITY/TRAVEL DOCUMENTS"] and td[text()="Id card"]]//a[@href="/Services/Booking/4874"]/button',
-            # Alternative: direct link to booking 4874
-            'a[href="/Services/Booking/4874"] button.button.primary',
-            'a[href="/Services/Booking/4874"] button',
+            # Most specific: target the exact row with IDENTITY/TRAVEL DOCUMENTS and Passport, then find the Book button
+            '//tr[td[text()="IDENTITY/TRAVEL DOCUMENTS"] and td[text()="Passport"]]//a[@href="/Services/Booking/656"]/button',
+            # Alternative: direct link to booking 656
+            'a[href="/Services/Booking/656"] button.button.primary',
+            'a[href="/Services/Booking/656"] button',
             # Table-based selectors
-            '#dataTableServices tr:has(td:text("IDENTITY/TRAVEL DOCUMENTS")):has(td:text("Id card")) a[href*="4874"] button',
-            '#dataTableServices a[href="/Services/Booking/4874"] button',
+            '#dataTableServices tr:has(td:text("IDENTITY/TRAVEL DOCUMENTS")):has(td:text("Passport")) a[href*="656"] button',
+            '#dataTableServices a[href="/Services/Booking/656"] button',
             # Fallback selectors
-            'td a[href="/Services/Booking/4874"] button.button.primary'
+            'td a[href="/Services/Booking/656"] button.button.primary'
         ]
         
         book_button_clicked = False
@@ -301,7 +301,7 @@ async def click_passport_book_button(page):
                 button_count = await book_button.count()
                 
                 if button_count > 0:
-                    print(f"Found IDENTITY/TRAVEL DOCUMENTS/Id card Book button using: {selector}")
+                    print(f"Found IDENTITY/TRAVEL DOCUMENTS/Passport Book button using: {selector}")
                     
                     # Extra human-like behavior to avoid detection
                     # Random mouse movements before clicking
@@ -314,16 +314,17 @@ async def click_passport_book_button(page):
                     await asyncio.sleep(random.uniform(1.0, 2.5))  # Longer hover time
                     await book_button.click()
                     
-                    print("Successfully clicked IDENTITY/TRAVEL DOCUMENTS/Id card Book button!")
+                    print("Successfully clicked IDENTITY/TRAVEL DOCUMENTS/Passport Book button!")
                     book_button_clicked = True
+                    
                     break
                     
             except Exception as e:
-                print(f"Failed to click IDENTITY/TRAVEL DOCUMENTS/Id card Book with '{selector}': {e}")
+                print(f"Failed to click IDENTITY/TRAVEL DOCUMENTS/Passport Book with '{selector}': {e}")
                 continue
         
         if not book_button_clicked:
-            print("Could not find IDENTITY/TRAVEL DOCUMENTS/Id card Book button")
+            print("Could not find IDENTITY/TRAVEL DOCUMENTS/Passport Book button")
             return False
         
         # Wait for the booking page to load
@@ -333,7 +334,7 @@ async def click_passport_book_button(page):
         current_url = page.url
         print(f"Current URL after clicking: {current_url}")
         
-        if "/Services/Booking/4874" not in current_url:
+        if "/Services/Booking/656" not in current_url:
             print("Did not navigate to expected booking page")
             return False
         
@@ -730,13 +731,13 @@ async def main():
             # Type email character by character with random delays
             for char in cfg["prenotami"]["username"]:
                 await page.keyboard.type(char)
-                await asyncio.sleep(random.uniform(0.05, 0.15))
+                await asyncio.sleep(random.uniform(0.02, 0.05))
             
             # Move to password field
             print("Filling password field...")
-            await asyncio.sleep(random.uniform(0.5, 1.2))
+            # await asyncio.sleep(random.uniform(0.5, 1.2))
             await password_field.click()
-            await asyncio.sleep(random.uniform(0.3, 0.8))
+            await asyncio.sleep(random.uniform(0.05, 0.2))
             
             # Clear field first
             await password_field.fill("")
@@ -870,6 +871,7 @@ async def main():
             await page.screenshot(path="datatable_missing.png")
         
         # get_otp_code()
+        await click_passport_book_button(page)
         # ================= 尝试预约循环 =================
         # Try to book VISAS/Schengen appointments with retry logic
         wait_time_flag = True
