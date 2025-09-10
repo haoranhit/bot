@@ -448,6 +448,45 @@ async def click_passport_book_button(page):
     except Exception as e:
         print(f"Error in click_passport_book_button: {e}")
         return False
+# ================= fill in booking page information.  =================
+async def fill_booking_page(page):
+    """
+    Fill in the booking page required information. 
+    """
+    page_content_after = await page.content()
+    if "An error occurred while processing the request" in page_content_after:
+        print("Server error occurred after clicking!")
+        # Send Telegram notification about the error
+        error_message = f"🚨 VISA Bot Critical Error\n\n❌ Server error after clicking: 'An error occurred while processing the request'\nScript will exit now\n🌐 URL: {page.url}"
+        await send_telegram_message(error_message)
+    
+        # Exit the script
+        print("Exiting script due to server error after clicking...")
+        await browser.close()
+        exit(1)
+    print("Looking for 'Address' entry ... ")
+
+    address_field = [
+            '#otp-send',
+            'button#otp-send',
+            'button[onclick="sendOTP();"]',
+            'button.button.primary#otp-send',
+            'button:has-text("Send new code")',
+            'button.primary:has-text("Send new code")'
+    ]
+    passport_field =[]
+    # fill in address
+    await address_field.click()
+    for char in cfg["prenotami"]["address"]:
+        await page.keyboard.type(char)
+    # fill in passport
+    await passport_field.click()
+    for char in cfg["prenotami"]["passport"]:
+         await page.keyboard.type(char)
+
+    # breakpoint for user to continue the operation. 
+    breakpoint()
+
 
 # ================= 获取OTP验证码函数 =================
 async def get_otp_code():
@@ -911,55 +950,29 @@ async def main():
                 print(f"Error checking page content: {e}")
             
             # Click the VISAS/Schengen Book button
-            book_success = await click_schengen_book_button(page)
+            await click_schengen_book_button(page)
             
-            if book_success:
-                # Wait for potential popup or page load
-                await asyncio.sleep(random.uniform(3, 6))  # Longer wait to avoid server stress
-                
+            # if book_success:
+            await asyncio.sleep(random.uniform(3, 6))  # Longer wait to avoid server stress
+            
+            # Check if we're on the new booking page
+            current_url = page.url
+            print(f"Current URL after clicking: {current_url}")
+            #handle not appointment availabe page 
+            if "/Services/Booking/694" not in current_url:
                 # Check for and handle no-appointments popup
-                popup_handled = await handle_no_appointments_popup(page)
-                
-                if popup_handled:
-                    print("No appointments available, will retry...")
-                    
+                await handle_no_appointments_popup(page)
+
                     # Send Telegram notification
-                    telegram_message = f"🔄 VISA Bot Update - Attempt {attempt + 1}/{max_attempts}\n\n❌ No appointments available for VISAS/Schengen\n⏰ Will retry in 5-15 seconds\n🌐 URL: {page.url}"
-                    await send_telegram_message(telegram_message)
-                    
-                    # Human-like delay before retry
-                    if attempt < max_attempts - 1:  # Don't wait after last attempt
-                        retry_delay = random.uniform(5, 15)  # Longer delay to avoid rate limiting
-                        print(f"Waiting {retry_delay:.1f} seconds before retry...")
-                        await asyncio.sleep(retry_delay)
-                        
-                        # Add some random mouse movements during wait
-                        for _ in range(random.randint(2, 4)):
-                            await page.mouse.move(random.randint(200, 800), random.randint(200, 600))
-                            await asyncio.sleep(random.uniform(2, 5))
-                    else:
-                        # Send final attempt message
-                        final_message = f"🛑 VISA Bot Final Update\n\n❌ All {max_attempts} attempts completed\n📋 No appointments found for VISAS/Schengen\n⏰ Script will continue monitoring\n🌐 URL: {page.url}"
-                        await send_telegram_message(final_message)
-                else:
-                    print("No popup detected - either appointments are available or booking succeeded!")
-                    # Send success notification
-                    success_message = f"✅ VISA Bot Success!\n\n🎉 Booking attempt successful or appointments available!\n📋 Service: VISAS/Schengen\n🌐 URL: {page.url}\n⏰ Time: {attempt + 1}/{max_attempts} attempts"
-                    await send_telegram_message(success_message)
-                    break
-            else:
-                print("Failed to click Book button or server error occurred")
-                
-                # Send error notification
-                error_message = f"⚠️ VISA Bot Error - Attempt {attempt + 1}/{max_attempts}\n\n❌ Failed to click Book button or server error\n📋 Service: VISAS/Schengen\n🌐 URL: {page.url}"
-                await send_telegram_message(error_message)
-                
-                if attempt < max_attempts - 1:
-                    retry_delay = random.uniform(1, 3)  # Longer delay for failed attempts
-                    print(f"Waiting {retry_delay:.1f} seconds before retry...")
-                    await asyncio.sleep(retry_delay)
+                telegram_message = f"🔄 VISA Bot Update - Attempt {attempt + 1}/{max_attempts}\n\n❌ No appointments available for VISAS/Schengen\n⏰ Will retry in 5-15 seconds\n🌐 URL: {page.url}"
+                await send_telegram_message(telegram_message)
+                print(telegram_message)
+                await browser.close()
+                exit(1)
+            # In the booking page. fill in necessary information. 
+
         
-        print("\n=== Booking attempts completed ===")
+        fill_booking_page(page)
 
         # await page.reload()
         # # 找到同时包含 VISAS 和 Schengen 的行，然后点击该行的 Book 按钮
