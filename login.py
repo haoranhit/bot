@@ -353,7 +353,8 @@ async def click_passport_book_button(page):
             await browser.close()
             exit(1)
         
-        # Now look for and click the "Send new code" button
+
+
         print("Looking for 'Send new code' button...")
         
         otp_send_selectors = [
@@ -375,9 +376,9 @@ async def click_passport_book_button(page):
                     print(f"Found 'Send new code' button using: {selector}")
                     
                     # Human-like interaction
-                    await asyncio.sleep(random.uniform(2, 4))
+                    # await asyncio.sleep(random.uniform(1, 4))
                     await otp_button.hover()
-                    await asyncio.sleep(random.uniform(1.0, 2.0))
+                    # await asyncio.sleep(random.uniform(1.0, 2.0))
                     await otp_button.click()
                     
                     print("Successfully clicked 'Send new code' button!")
@@ -393,7 +394,7 @@ async def click_passport_book_button(page):
             return False
         
         # Wait after clicking the OTP button
-        await asyncio.sleep(random.uniform(2, 4))
+        # await asyncio.sleep(random.uniform(2, 4))
         
         # Return to the previous webpage (Services page)
         print("Returning to Services page...")
@@ -451,191 +452,137 @@ async def click_passport_book_button(page):
 # ================= fill in booking page information.  =================
 async def fill_booking_page(page):
     """
-    Fill in the booking page required information. 
-    """
-    page_content_after = await page.content()
-    if "An error occurred while processing the request" in page_content_after:
-        print("Server error occurred after clicking!")
-        # Send Telegram notification about the error
-        error_message = f"🚨 VISA Bot Critical Error\n\n❌ Server error after clicking: 'An error occurred while processing the request'\nScript will exit now\n🌐 URL: {page.url}"
-        await send_telegram_message(error_message)
-    
-        # Exit the script
-        print("Exiting script due to server error after clicking...")
-        await browser.close()
-        exit(1)
-    print("Looking for 'Address' entry ... ")
-
-    address_field = [
-            '#otp-send',
-            'button#otp-send',
-            'button[onclick="sendOTP();"]',
-            'button.button.primary#otp-send',
-            'button:has-text("Send new code")',
-            'button.primary:has-text("Send new code")'
-    ]
-    passport_field =[]
-    # fill in address
-    await address_field.click()
-    for char in cfg["prenotami"]["address"]:
-        await page.keyboard.type(char)
-    # fill in passport
-    await passport_field.click()
-    for char in cfg["prenotami"]["passport"]:
-         await page.keyboard.type(char)
-
-    # breakpoint for user to continue the operation. 
-    breakpoint()
-
-
-# ================= 获取OTP验证码函数 =================
-async def get_otp_code():
-    """
-    Get OTP code from Gmail account specified in config
-    Returns the OTP code as string if found, None otherwise
+    Fill in the booking page required information including passport number.
     """
     try:
-        import imaplib
-        import email
-        from email.header import decode_header
-        import re
-        import time
+        # Check for server errors first
+        page_content_after = await page.content()
+        if "An error occurred while processing the request" in page_content_after:
+            print("Server error occurred after clicking!")
+            # Send Telegram notification about the error
+            error_message = f"🚨 VISA Bot Critical Error\n\n❌ Server error after clicking: 'An error occurred while processing the request'\nScript will exit now\n🌐 URL: {page.url}"
+            await send_telegram_message(error_message)
+            
+            # Exit the script
+            print("Exiting script due to server error after clicking...")
+            await browser.close()
+            exit(1)
+
+        print("Starting to fill booking page information...")
         
-        print("Connecting to Gmail to retrieve OTP code...")
+        # Wait for the page to fully load
         
-        # Get email credentials from config
-        email_address = cfg["prenotami"]["username"]
-        email_password = cfg["prenotami"]["password"]
+        # Look for passport number field
+        print("Looking for passport number field...")
         
-        print(f"Connecting to Gmail account: {email_address}")
-        
-        # Connect to QQ Mail IMAP server
-        mail = imaplib.IMAP4_SSL("imap.qq.com", 993)
-        mail.login(email_address, email_password)
-        
-        # Select inbox
-        mail.select("inbox")
-        
-        # Search for recent emails from prenotami (last 10 minutes)
-        # Look for emails from the Italian consulate system
-        search_criteria = [
-            'FROM "prenotami.esteri.it"',
-            'FROM "esteri.it"',
-            'FROM "noreply@prenotami.esteri.it"',
-            'SUBJECT "OTP"',
-            'SUBJECT "verification"',
-            'SUBJECT "code"'
+        passport_field_selectors = [
+            '#DatiAddizionaliPrenotante_2___testo',
+            'input[name="DatiAddizionaliPrenotante[2]._testo"]',
+            'input[id*="DatiAddizionaliPrenotante_2___testo"]',
+            '#datoaddizionale_2 input[type="text"]',
+            'input[maxlength="100"][name*="DatiAddizionaliPrenotante"]'
         ]
         
-        otp_code = None
-        
-        for criteria in search_criteria:
+        passport_field_found = False
+        for selector in passport_field_selectors:
             try:
-                print(f"Searching emails with criteria: {criteria}")
-                
-                # Search for emails from the last hour
-                status, messages = mail.search(None, criteria, 'SINCE', time.strftime("%d-%b-%Y", time.gmtime(time.time() - 3600)))
-                
-                if status == "OK" and messages[0]:
-                    email_ids = messages[0].split()
+                passport_field = page.locator(selector)
+                if await passport_field.count() > 0:
+                    print(f"Found passport field using selector: {selector}")
                     
-                    # Check the most recent emails first
-                    for email_id in reversed(email_ids[-5:]):  # Check last 5 emails
-                        try:
-                            # Fetch the email
-                            status, msg_data = mail.fetch(email_id, "(RFC822)")
-                            
-                            if status == "OK":
-                                # Parse the email
-                                email_body = msg_data[0][1]
-                                email_message = email.message_from_bytes(email_body)
-                                
-                                # Get email subject
-                                subject = decode_header(email_message["Subject"])[0][0]
-                                if isinstance(subject, bytes):
-                                    subject = subject.decode()
-                                
-                                print(f"Checking email with subject: {subject}")
-                                
-                                # Get email body
-                                body = ""
-                                if email_message.is_multipart():
-                                    for part in email_message.walk():
-                                        if part.get_content_type() == "text/plain":
-                                            body = part.get_payload(decode=True).decode()
-                                            break
-                                        elif part.get_content_type() == "text/html":
-                                            body = part.get_payload(decode=True).decode()
-                                else:
-                                    body = email_message.get_payload(decode=True).decode()
-                                
-                                # Look for OTP patterns in the email body
-                                otp_patterns = [
-                                    r'(?:OTP|code|verification code|codice)[\s:]*(\d{4,8})',
-                                    r'(\d{6})',  # 6-digit code
-                                    r'(\d{4})',  # 4-digit code
-                                    r'(\d{8})',  # 8-digit code
-                                    r'Your code is[:\s]*(\d+)',
-                                    r'Il tuo codice è[:\s]*(\d+)',
-                                    r'verification code[:\s]*(\d+)',
-                                ]
-                                
-                                for pattern in otp_patterns:
-                                    matches = re.findall(pattern, body, re.IGNORECASE)
-                                    if matches:
-                                        # Get the most likely OTP (usually 4-6 digits)
-                                        for match in matches:
-                                            if 4 <= len(match) <= 8:
-                                                otp_code = match
-                                                print(f"Found OTP code: {otp_code}")
-                                                break
-                                    
-                                    if otp_code:
-                                        break
-                                
-                                if otp_code:
-                                    break
-                                    
-                        except Exception as e:
-                            print(f"Error processing email {email_id}: {e}")
-                            continue
+                    # Click and fill the passport field
+                    await passport_field.click()
+                    # await asyncio.sleep(random.uniform(0.3, 0.8))
                     
-                    if otp_code:
-                        break
-                        
+                    # Clear the field first
+                    # await passport_field.fill("")
+                    # await asyncio.sleep(0.2)
+                    
+                    # Type passport number character by character
+                    passport_number = cfg["prenotami"]["passport"]
+                    
+                    await page.keyboard.type(passport_number)
+                    
+                    print("Successfully filled passport number field")
+                    passport_field_found = True
+                    break
+                    
+                    
             except Exception as e:
-                print(f"Error searching with criteria '{criteria}': {e}")
+                print(f"Failed to fill passport field with selector '{selector}': {e}")
                 continue
         
-        # Close the connection
-        mail.close()
-        mail.logout()
+        if not passport_field_found:
+            print("❌ Could not find passport number field!")
+            await page.screenshot(path="passport_field_not_found.png")
+            return False
         
-        if otp_code:
-            print(f"Successfully retrieved OTP code: {otp_code}")
-            
-            # Send Telegram notification about OTP retrieval
-            telegram_message = f"📧 OTP Code Retrieved\n\n✅ Successfully found OTP code: {otp_code}\n📧 From email: {email_address}\n⏰ Retrieved at: {time.strftime('%Y-%m-%d %H:%M:%S')}"
-            await send_telegram_message(telegram_message)
-            
-            return otp_code
-        else:
-            print("No OTP code found in recent emails")
-            
-            # Send Telegram notification about failure
-            telegram_message = f"❌ OTP Code Not Found\n\n🔍 Searched recent emails in: {email_address}\n⚠️ No OTP code found\n💡 Please check if the email was received"
-            await send_telegram_message(telegram_message)
-            
-            return None
-            
+        # Look for address field - Full residence address
+        print("Looking for Full residence address field...")
+        
+        address_field_selectors = [
+            '#DatiAddizionaliPrenotante_6___testo',
+            'input[name="DatiAddizionaliPrenotante[6]._testo"]',
+            'input[id*="DatiAddizionaliPrenotante_6___testo"]',
+            '#datoaddizionale_6 input[type="text"]',
+            'input[maxlength="100"][name*="DatiAddizionaliPrenotante"][name*="6"]'
+        ]
+        
+        address_field_found = False
+        for selector in address_field_selectors:
+            try:
+                address_field = page.locator(selector)
+                if await address_field.count() > 0:
+                    print(f"Found address field using selector: {selector}")
+                    
+                    # Click and fill the address field
+                    await address_field.click()
+                    
+                    # Type address quickly (no delays between characters)
+                    address = cfg["prenotami"]["address"]
+                    
+                    await page.keyboard.type(address)
+                    
+                    print("Successfully filled address field")
+                    address_field_found = True
+                    break
+                    
+                    
+            except Exception as e:
+                print(f"Failed to fill address field with selector '{selector}': {e}")
+                continue
+        
+        if not address_field_found:
+            print("❌ Address field not found!")
+            await page.screenshot(path="address_field_not_found.png")
+        
+        # Wait a bit after filling fields
+        await asyncio.sleep(random.uniform(1, 3))
+        
+        print("✅ Booking page information filled successfully")
+        
+        # Take a screenshot for verification
+        await page.screenshot(path="booking_page_filled.png")
+        print("Screenshot saved: booking_page_filled.png")
+        
+        print("Press Ctrl+C to stop or let the script continue...")
+        
+        breakpoint()
+        # await asyncio.sleep(10)  # 10 second pause instead of breakpoint
+        
+        return True
+        
     except Exception as e:
-        print(f"Error retrieving OTP code: {e}")
+        print(f"❌ Error in fill_booking_page: {e}")
+        await page.screenshot(path="fill_booking_error.png")
         
-        # Send Telegram notification about error
-        error_message = f"🚨 OTP Retrieval Error\n\n❌ Failed to retrieve OTP code\n📧 Email: {cfg['prenotami']['username']}\n🔍 Error: {str(e)}"
+        # Send error notification
+        error_message = f"🚨 VISA Bot Error\n\n❌ Failed to fill booking page\n🔍 Error: {str(e)}\n📸 Screenshot: fill_booking_error.png\n🌐 URL: {page.url}"
         await send_telegram_message(error_message)
         
-        return None
+        return False
+
+
 
 # ================= 检查空档函数 =================
 async def check_appointments(page):
@@ -761,7 +708,7 @@ async def main():
             # Fill email field
             print("Filling email field...")
             await email_field.click()
-            await asyncio.sleep(random.uniform(0.3, 0.8))
+            await asyncio.sleep(random.uniform(0.03, 0.08))
             
             # Clear field first
             await email_field.fill("")
@@ -770,17 +717,17 @@ async def main():
             # Type email character by character with random delays
             for char in cfg["prenotami"]["username"]:
                 await page.keyboard.type(char)
-                await asyncio.sleep(random.uniform(0.02, 0.05))
+                await asyncio.sleep(random.uniform(0.00004, 0.00008))
             
             # Move to password field
             print("Filling password field...")
             # await asyncio.sleep(random.uniform(0.5, 1.2))
             await password_field.click()
-            await asyncio.sleep(random.uniform(0.05, 0.2))
+            await asyncio.sleep(random.uniform(0.00004, 0.00008))
             
             # Clear field first
             await password_field.fill("")
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.02)
             
             # Type password character by character
             for char in cfg["prenotami"]["password"]:
@@ -953,7 +900,7 @@ async def main():
             await click_schengen_book_button(page)
             
             # if book_success:
-            await asyncio.sleep(random.uniform(3, 6))  # Longer wait to avoid server stress
+            # await asyncio.sleep(random.uniform(3, 6))  # Longer wait to avoid server stress
             
             # Check if we're on the new booking page
             current_url = page.url
@@ -969,10 +916,9 @@ async def main():
                 print(telegram_message)
                 await browser.close()
                 exit(1)
-            # In the booking page. fill in necessary information. 
-
-        
-        fill_booking_page(page)
+            else:
+                # In the booking page. fill in necessary information. 
+                fill_booking_page(page)
 
         # await page.reload()
         # # 找到同时包含 VISAS 和 Schengen 的行，然后点击该行的 Book 按钮
@@ -985,4 +931,5 @@ async def main():
 
 
 asyncio.run(main())
+
 
